@@ -22,16 +22,39 @@ extension MyService: TargetType {
     // Other needed configurations
     // ...
     
-    // Validate setup is not required; defaults to `false`
+    // Validate setup is not required; defaults to `.none`
     // for all requests unless specified otherwise.
-    var validate: Bool {
+    var validationType: ValidationType {
         switch self {
         case .zen, .showUser, .showAccounts:
-            return true
+            return .successCodes
         case .createUser(let firstName, let lastName):
-            return false
+            return .none
         }
     }
 }
 ```
-Alamofire automatic validation can be useful, for example if you want to use the [Alamofire's `RequestRetrier` and `RequestAdapter`](https://github.com/Alamofire/Alamofire#requestretrier), for an oAuth 2 ready Moya Client.
+Moya allows you to configure the Alamofire validation behavior through the `ValidationType` enum.
+ 
+You can choose from four cases:
+- `.none` which does not perform any validation.
+- `.successCodes` which validates requests with status codes 200 - 299.
+- `.successAndRedirectCodes` which validates requests with status codes 200 - 399.
+- `.customCodes([Int])` which only validates the given status codes.
+
+The default validation type for all requests is `ValidationType.none`.
+
+Alamofire automatic validation can be useful, for example if you want to use the [Alamofire's `RequestRetrier` and `RequestAdapter`](https://github.com/Alamofire/Alamofire#requestretrier), for an OAuth 2 ready Moya Client.
+
+Also, if validation fails, you can get the response from the returned `MoyaError`.
+
+```swift
+provider.request(target) { result in
+    ...
+    if case let .failure(error) = result {
+        response = error.response
+        // Do something with the response
+    }
+    ...
+}
+```
